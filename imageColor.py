@@ -723,9 +723,13 @@ def hacky_permutation(y, x, r):
 # Generate instructions for physically creating artwork (assuming rectangular shape)        
 def generate_instructions_pdf(line_dict, I: Img, args: ThreadArtColorParams, font_size, num_cols, num_rows, true_x, show_stats=True, version="n+1", true_thread_diameter=0.25):
 
-    font_file = 'lines/courier-prime.regular.ttf'
-    prime_font = TTFont('Courier Prime', font_file)
-    pdfmetrics.registerFont(prime_font)
+    try:
+        font_file = 'lines/courier-prime.regular.ttf'
+        prime_font = TTFont('Courier Prime', font_file)
+        pdfmetrics.registerFont(prime_font)
+        using_font = True
+    except:
+        using_font = False
 
     # A4 = (596, 870)
     width = A4[0]
@@ -818,7 +822,8 @@ def generate_instructions_pdf(line_dict, I: Img, args: ThreadArtColorParams, fon
                 if isinstance(next_line, str):
 
                     to = canvas.beginText()
-                    to.setFont("Courier Prime", 14 if num_cols == 3 else 18)
+                    if using_font:
+                        to.setFont("Courier Prime", 14 if num_cols == 3 else 18)
                     to.setTextOrigin(x, y)
                     to.setFillColor(black)
                     to.textLine(next_line)
@@ -832,7 +837,8 @@ def generate_instructions_pdf(line_dict, I: Img, args: ThreadArtColorParams, fon
                     tens, units = next_line
 
                     to = canvas.beginText()
-                    to.setFont("Courier Prime", font_size) # "Symbola"
+                    if using_font:
+                        to.setFont("Courier Prime", font_size) # "Symbola"
 
                     to.setTextOrigin(x, y)
                     to.setFillColor(black)
@@ -958,6 +964,8 @@ def generate_instructions_pdf(line_dict, I: Img, args: ThreadArtColorParams, fon
 
 
 
+
+
 def create_list_of_all_lines(line_dict, args: ThreadArtColorParams):
 
     all_lines = []
@@ -992,7 +1000,8 @@ def render_animation(
     background_color=(255,255,255),
     d_coords_output=None
 ):
-
+    if not(os.path.exists("animations")):
+        os.mkdir("animations")
     all_lines = create_list_of_all_lines(line_dict, args)[::-1]
     frames_list = []
 
