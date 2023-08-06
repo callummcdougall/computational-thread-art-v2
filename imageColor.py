@@ -129,8 +129,6 @@ class ThreadArtColorParams():
 
 # ===================================================================================================
 
-FILENAME = r"C:\Users\calsm\Documents\ComputationalArt\thread_art_2"
-
 # Class for images: contains Floyd-Steinberg dithering image function, histogram of colours, different versions of the image, etc
 class Img:
 
@@ -138,7 +136,7 @@ class Img:
 
         t0 = time.time()
 
-        self.filename = FILENAME + "\images\{}".format(filename)
+        self.filename = "images/{}".format(filename)
         self.x = x
         self.y = y
         self.palette: Dict[str, Tuple[int, int, int]] = {color_name: tuple(color_value) for color_name, color_value in palette.items()}
@@ -154,14 +152,14 @@ class Img:
             self.color_histogram, self.mono_images_dict = self.generate_mono_images_dict(d_pixels, other_colors_weighting)
         
         if w_filename:
-            self.w_filename = FILENAME + "\images\{}".format(w_filename)
+            self.w_filename = "images/{}".format(w_filename)
             base_image_w = Image.open(self.w_filename).resize((self.x, self.y))
             self.w = 1 - (t.tensor((base_image_w).convert(mode="L").getdata()).reshape((self.y, self.x)) / 255)
         else:
             self.w = None
 
         if wneg_filename:
-            self.wneg_filename = FILENAME + "\images\{}".format(wneg_filename)
+            self.wneg_filename = "images/{}".format(wneg_filename)
             base_image_wneg = Image.open(self.wneg_filename).resize((self.x, self.y))
             self.wneg = 1 - (t.tensor((base_image_wneg).convert(mode="L").getdata()).reshape((self.y, self.x)) / 255)
         else:
@@ -725,7 +723,7 @@ def hacky_permutation(y, x, r):
 # Generate instructions for physically creating artwork (assuming rectangular shape)        
 def generate_instructions_pdf(line_dict, I: Img, args: ThreadArtColorParams, font_size, num_cols, num_rows, true_x, show_stats=True, version="n+1", true_thread_diameter=0.25):
 
-    font_file = 'C:/Users/calsm/Documents/ComputationalArt/Thread Art/misc/fonts/courier-prime.regular.ttf'
+    font_file = 'lines/courier-prime.regular.ttf'
     prime_font = TTFont('Courier Prime', font_file)
     pdfmetrics.registerFont(prime_font)
 
