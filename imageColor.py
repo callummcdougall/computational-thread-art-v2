@@ -561,12 +561,12 @@ def paint_canvas(
     args: ThreadArtColorParams,
     mode: str = "svg",
     filename_override: Optional[str] = None,
-    rand_perm: float = 0.0015,
+    rand_perm: float = 0.0025,
     fraction: Union[Tuple, Dict] = (0, 1),
     background_color: Optional[Tuple[int, int, int]] = None,
     show_individual_colors: bool = False,
     img_width=800,
-    sf=6,
+    sf=8,
     verbose: bool = False,
 ):
 

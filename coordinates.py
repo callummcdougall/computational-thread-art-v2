@@ -2,7 +2,7 @@
 
 import numpy as np
 from PIL import Image, ImageDraw
-from IPython.display import display
+from IPython.display import display, SVG
 from tqdm import tqdm
 import torch as t
 
