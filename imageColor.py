@@ -563,7 +563,7 @@ def paint_canvas(
     filename_override: Optional[str] = None,
     rand_perm: float = 0.0025,
     fraction: Union[Tuple, Dict] = (0, 1),
-    background_color: Optional[Tuple[int, int, int]] = None,
+    background_color: Optional[Tuple[int, int, int]] = (0, 0, 0),
     show_individual_colors: bool = False,
     img_width=800,
     sf=8,
@@ -575,9 +575,15 @@ def paint_canvas(
     # if fraction != (0, 1), it means you're not plotting all the lines, only a subset of them - useful to see how many lines are actually needed to make the image look good
     # precise syntax: fraction = (a, b) means you're plotting between the a and bth lines, e.g. (0, 0.5) means the best half
     if type(fraction) == tuple:
-        line_dict_ = {color: lines[int(fraction[0] * len(lines)):int(fraction[1] * len(lines))] for color, lines in line_dict.items()}
+        line_dict_ = {
+            color: lines[int(fraction[0] * len(lines)):int(fraction[1] * len(lines))]
+            for color, lines in line_dict.items()
+        }
     else:
-        line_dict_ = {color: lines[int(fraction.get(color, (0, 1))[0] * len(lines)):int(fraction.get(color, (0, 1))[1] * len(lines))] for color, lines in line_dict.items()}
+        line_dict_ = {
+            color: lines[int(fraction.get(color, (0, 1))[0] * len(lines)):int(fraction.get(color, (0, 1))[1] * len(lines))]
+            for color, lines in line_dict.items()
+        }
     
 
     # find a name to save the file with
@@ -667,7 +673,7 @@ def paint_canvas(
                 context.scale(I.x, I.y)
                 context.set_line_width(0.0002 * args.line_width_multiplier)
 
-                if sum(color_value) / 3 > 240:
+                if sum(color_value) > 255 * 2 - 5:
                     context.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 else:
                     context.set_source_rgba(1.0, 1.0, 1.0, 0.0)
@@ -675,18 +681,9 @@ def paint_canvas(
                     
                 context.set_source_rgb(*[c/255 for c in color_value])
 
-                n_groups = len([j for j in group_orders if j == i])
-                group_order = len([j for j in group_orders[:i_idx] if j == i])
-
-                n = int(len(lines) / n_groups)
-                lines_to_draw = lines[::-1]
-                lines_to_draw = lines_to_draw[n*group_order : n*(group_order+1)]
-                
-                if verbose: print(f"{i_idx+1:2}/{len(group_orders)}: {len(lines_to_draw):4} {color_name}")
-
                 current_node = -1
 
-                for line in lines_to_draw:
+                for line in lines:
 
                     starting_node = line[1]
                     if starting_node != current_node:
