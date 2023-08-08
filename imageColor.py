@@ -32,7 +32,7 @@ import ipywidgets as wg
 from IPython.display import display, HTML
 import torch as t
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Tuple, Dict, Union
 from torchtyping import TensorType as TT
 import einops
 
@@ -559,15 +559,15 @@ def paint_canvas(
     line_dict: dict,
     I: Img,
     args: ThreadArtColorParams,
-    mode="svg",
-    filename_override=None,
-    rand_perm=0.0015,
-    fraction=(0, 1),
-    background_color=None,
-    show_individual_colors=False,
+    mode: str = "svg",
+    filename_override: Optional[str] = None,
+    rand_perm: float = 0.0015,
+    fraction: Union[Tuple, Dict] = (0, 1),
+    background_color: Optional[Tuple[int, int, int]] = None,
+    show_individual_colors: bool = False,
     img_width=800,
     sf=6,
-    verbose=False,
+    verbose: bool = False,
 ):
 
     assert mode == "svg", "Only svg mode is supported right now."
@@ -605,6 +605,7 @@ def paint_canvas(
             group_orders = [d[char] for char in group_orders]
 
     print(f"Saving to {img_filename!r}")
+    
     with cairo.SVGSurface(img_filename, I.x, I.y) as surface:
                     
         context = cairo.Context(surface)
@@ -632,8 +633,7 @@ def paint_canvas(
             lines_to_draw = lines[::-1]
             lines_to_draw = lines_to_draw[n*group_order : n*(group_order+1)]
             
-            if verbose:
-                print(f"{i_idx+1:2}/{len(group_orders)}: {len(lines_to_draw):4} {color_name}")
+            if verbose: print(f"{i_idx+1:2}/{len(group_orders)}: {len(lines_to_draw):4} {color_name}")
 
             current_node = -1
 
@@ -656,57 +656,53 @@ def paint_canvas(
 
 
     if show_individual_colors:
+
+        for color_name, color_value in I.palette.items():
+
+            lines = line_dict_[color_name]
         
-        image_ = Image.new(mode="RGB", size=(sf*I.x, sf*I.y), color=background_color)
-        i_draw = ImageDraw.Draw(image_)
+            with cairo.SVGSurface(img_filename.replace(".", f"_{color_name}."), I.x, I.y) as surface:
+                            
+                context = cairo.Context(surface)
+                context.scale(I.x, I.y)
+                context.set_line_width(0.0002 * args.line_width_multiplier)
 
-        x_ = img_width
-        y_ = int(x_ * I.y/I.x)
-
-        image_toadd = image_.resize((x_, y_))
-        i_bytes = io.BytesIO()
-        image_toadd.save(i_bytes, format='PNG')
-        i_bytes_value = i_bytes.getvalue()
-        img_list = [wg.Image(value=i_bytes_value, format="PNG")]
-
-        for (i_idx, i) in enumerate(group_orders):
+                if sum(color_value) / 3 > 240:
+                    context.set_source_rgba(0.0, 0.0, 0.0, 1.0)
+                else:
+                    context.set_source_rgba(1.0, 1.0, 1.0, 0.0)
+                context.paint()
                     
-            color = I.palette[i]
-            lines = line_dict_[color]
+                context.set_source_rgb(*[c/255 for c in color_value])
 
-            n_groups = len([j for j in group_orders if j == i])
-            group_order = len([j for j in group_orders[:i_idx] if j == i])
+                n_groups = len([j for j in group_orders if j == i])
+                group_order = len([j for j in group_orders[:i_idx] if j == i])
 
-            n = int(len(lines) / n_groups)
-            lines_to_draw = lines[::-1]
-            lines_to_draw = lines_to_draw[n*group_order : n*(group_order+1)]
-
-            for (i0, i1) in lines_to_draw:
-
-                (p0y, p0x), (p1y, p1x) = sf*args.d_coords[i0], sf*args.d_coords[i1]
-                i_draw.line([p0x, p0y, p1x, p1y], fill=color, width=1)
-        
-            image_toadd = image_.resize((x_, y_))
-            i_bytes = io.BytesIO()
-            image_toadd.save(i_bytes, format='PNG')
-            i_bytes_value = i_bytes.getvalue()
-            img_list.append(wg.Image(value=i_bytes_value, format="PNG"))
-
-        slider = wg.IntSlider(min=0, max=len(img_list)-1, value=len(img_list)-1)
-
-        out = wg.Output()
-
-        def response(change):
-            out.clear_output(wait=True)
-            with out:
-                display(img_list[slider.value])
+                n = int(len(lines) / n_groups)
+                lines_to_draw = lines[::-1]
+                lines_to_draw = lines_to_draw[n*group_order : n*(group_order+1)]
                 
-        slider.observe(response, names="value")
-        response(1)
+                if verbose: print(f"{i_idx+1:2}/{len(group_orders)}: {len(lines_to_draw):4} {color_name}")
 
-        box = wg.VBox([out, slider])
+                current_node = -1
 
-        display(box)
+                for line in lines_to_draw:
+
+                    starting_node = line[1]
+                    if starting_node != current_node:
+                        y, x = args.d_coords[starting_node] / t.tensor([I.y, I.x])
+                        y, x = hacky_permutation(y, x, rand_perm)
+                        context.move_to(x, y)
+
+                    finishing_node = line[0]
+                    y, x = args.d_coords[finishing_node] / t.tensor([I.y, I.x])
+                    y, x = hacky_permutation(y, x, rand_perm)
+                    context.line_to(x, y)
+
+                    current_node = finishing_node
+
+                context.stroke()
+
 
 
 # Permutes coordinates, to stop weird-looking line pattern effects (used by `paint_canvas` function)

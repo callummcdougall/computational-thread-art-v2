@@ -1,7 +1,6 @@
 scipy
 webcolors
 pycairo
-sklearn
 PyPDF2
 reportlab
 torchtyping
